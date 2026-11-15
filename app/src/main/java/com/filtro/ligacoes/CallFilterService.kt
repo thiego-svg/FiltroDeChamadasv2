@@ -33,20 +33,17 @@ class CallFilterService : CallScreeningService() {
         if (!prefs.enabled) return allowResponse()
 
         val handle = details.handle
-        val isVoip = (handle != null && handle.scheme != "tel")
+        val isVoip = ((handle != null) && (handle.scheme != "tel"))
 
         if (isVoip) {
             if (!prefs.blockVoip) return allowResponse()
             val number = handle.schemeSpecificPart.orEmpty()
-            val isKnown = if (number.isNotBlank()) isContact(number) == true else false
+            val isKnown = number.isNotBlank() && (isContact(number) == true)
             if (isKnown) return allowResponse()
 
             prefs.addLog(number.ifBlank { "WhatsApp / VoIP" })
             return rejectResponse()
         }
-
-        // Chamadas que não são de telefone (SIP/VoIP) não são filtradas.
-        if ((handle != null) && (handle.scheme != "tel")) return allowResponse()
 
         val number = handle?.schemeSpecificPart.orEmpty()
 

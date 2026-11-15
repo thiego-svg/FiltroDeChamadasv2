@@ -32,7 +32,7 @@ object Pal {
 fun FiltroTheme(active: Boolean = true, content: @Composable () -> Unit) {
     val primaryColor by animateColorAsState(
         if (active) Pal.Green else Pal.Red,
-        tween(1800, easing = FastOutSlowInEasing),
+        tween(350, easing = FastOutSlowInEasing),
         label = "themePrimary"
     )
     MaterialTheme(

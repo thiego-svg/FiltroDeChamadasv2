@@ -54,8 +54,6 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.filtro.ligacoes.BlockedCall
 import com.filtro.ligacoes.Health
 import com.filtro.ligacoes.Prefs
-import java.util.Date
-import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -171,7 +169,7 @@ private fun HomeScreen(
 
     val ready = roleHeld && contactsOk
     val shownTotal by animateIntAsState(total, tween(800), label = "total")
-    val primaryColor by animateColorAsState(if (protecting) Pal.Green else Pal.Red, tween(1800, easing = FastOutSlowInEasing), label = "primaryColor")
+    val primaryColor by animateColorAsState(if (protecting) Pal.Green else Pal.Red, tween(350, easing = FastOutSlowInEasing), label = "primaryColor")
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(

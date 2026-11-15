@@ -76,7 +76,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun AuroraBackground(
     active: Boolean = true,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     val t = rememberInfiniteTransition(label = "aurora")
     val a by t.animateFloat(
@@ -104,22 +104,22 @@ fun AuroraBackground(
 
     val bgMiddle by animateColorAsState(
         if (active) Color(0xFF041510) else Pal.DeepRed,
-        tween(1800, easing = FastOutSlowInEasing),
-        label = "bgMiddle"
+        tween(350, easing = FastOutSlowInEasing),
+        label = "bgMiddle",
     )
     val colorA by animateColorAsState(
         if (active) Pal.Green else Pal.Red,
-        tween(1800, easing = FastOutSlowInEasing),
+        tween(350, easing = FastOutSlowInEasing),
         label = "colorA"
     )
     val colorB by animateColorAsState(
         if (active) Pal.Mint else Pal.Crimson,
-        tween(1800, easing = FastOutSlowInEasing),
+        tween(350, easing = FastOutSlowInEasing),
         label = "colorB"
     )
     val colorC by animateColorAsState(
         if (active) Pal.Lime else Pal.Rose,
-        tween(1800, easing = FastOutSlowInEasing),
+        tween(350, easing = FastOutSlowInEasing),
         label = "colorC"
     )
 
@@ -167,17 +167,17 @@ fun GlassCard(
 ) {
     val accentColor by animateColorAsState(
         if (active) Pal.Green else Pal.Red,
-        tween(1800, easing = FastOutSlowInEasing),
+        tween(350, easing = FastOutSlowInEasing),
         label = "cardAccent"
     )
     val bgAlphaTop by animateFloatAsState(
         targetValue = if (active) 0.13f else 0.08f,
-        animationSpec = tween(1800, easing = FastOutSlowInEasing),
+        animationSpec = tween(350, easing = FastOutSlowInEasing),
         label = "cardBgAlphaTop"
     )
     val bgAlphaBottom by animateFloatAsState(
         targetValue = if (active) 0.04f else 0.02f,
-        animationSpec = tween(1800, easing = FastOutSlowInEasing),
+        animationSpec = tween(350, easing = FastOutSlowInEasing),
         label = "cardBgAlphaBottom"
     )
 
@@ -234,8 +234,8 @@ fun GlassSwitch(
         label = "thumb"
     )
     val trackAlpha by animateFloatAsState(if (checked) 1f else 0f, tween(300), label = "track")
-    val trackStart by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(1800, easing = FastOutSlowInEasing), label = "switchStart")
-    val trackEnd by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(1800, easing = FastOutSlowInEasing), label = "switchEnd")
+    val trackStart by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(350, easing = FastOutSlowInEasing), label = "switchStart")
+    val trackEnd by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(350, easing = FastOutSlowInEasing), label = "switchEnd")
 
     Box(
         modifier = modifier
@@ -282,8 +282,8 @@ fun GlassSegmented(
         spring(dampingRatio = 0.75f, stiffness = 300f),
         label = "seg"
     )
-    val segStart by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(1800, easing = FastOutSlowInEasing), label = "segStart")
-    val segEnd by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(1800, easing = FastOutSlowInEasing), label = "segEnd")
+    val segStart by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(350, easing = FastOutSlowInEasing), label = "segStart")
+    val segEnd by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(350, easing = FastOutSlowInEasing), label = "segEnd")
     val outer = RoundedCornerShape(20.dp)
 
     BoxWithConstraints(
@@ -339,8 +339,8 @@ fun PillButton(
     active: Boolean = true,
     onClick: () -> Unit
 ) {
-    val colStart by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(1800, easing = FastOutSlowInEasing), label = "btnStart")
-    val colEnd by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(1800, easing = FastOutSlowInEasing), label = "btnEnd")
+    val colStart by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(350, easing = FastOutSlowInEasing), label = "btnStart")
+    val colEnd by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(350, easing = FastOutSlowInEasing), label = "btnEnd")
 
     Box(
         modifier = modifier
@@ -370,14 +370,14 @@ fun ShieldOrb(active: Boolean, modifier: Modifier = Modifier) {
     )
 
     val glowTarget = if (active) 1f else 0.80f
-    val glow by animateFloatAsState(glowTarget, tween(1800, easing = FastOutSlowInEasing), label = "glow")
+    val glow by animateFloatAsState(glowTarget, tween(350, easing = FastOutSlowInEasing), label = "glow")
 
-    val primaryColor by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(1800, easing = FastOutSlowInEasing), label = "shieldPrimary")
-    val secondaryColor by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(1800, easing = FastOutSlowInEasing), label = "shieldSecondary")
+    val primaryColor by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(350, easing = FastOutSlowInEasing), label = "shieldPrimary")
+    val secondaryColor by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(350, easing = FastOutSlowInEasing), label = "shieldSecondary")
 
     val activeProgress by animateFloatAsState(
         targetValue = if (active) 1f else 0f,
-        animationSpec = tween(1800, easing = FastOutSlowInEasing),
+        animationSpec = tween(350, easing = FastOutSlowInEasing),
         label = "shieldIconProgress"
     )
 
@@ -435,7 +435,7 @@ fun ShieldOrb(active: Boolean, modifier: Modifier = Modifier) {
         val p = activeProgress // 0f = X, 1f = Check
 
         fun lerp(start: Float, stop: Float, fraction: Float): Float {
-            return start + fraction * (stop - start)
+            return start + (fraction * (stop - start))
         }
 
         val strokeW = 5.dp.toPx()
@@ -489,7 +489,7 @@ fun GlassPlusButton(
 ) {
     val accentColor by animateColorAsState(
         if (active) Pal.Green else Pal.Red,
-        tween(1800, easing = FastOutSlowInEasing),
+        tween(350, easing = FastOutSlowInEasing),
         label = "plusBtnAccent"
     )
 
@@ -542,7 +542,7 @@ fun GearIcon(tint: Color) {
         val teeth = 8
         for (i in 0 until teeth) {
             val angle = Math.toRadians((i * (360.0 / teeth)))
-            val x1 = cx + (r * 0.60f) * kotlin.math.cos(angle).toFloat()
+            val x1 = cx + ((r * 0.60f) * kotlin.math.cos(angle).toFloat())
             val y1 = cy + (r * 0.60f) * kotlin.math.sin(angle).toFloat()
             val x2 = cx + r * 1.05f * kotlin.math.cos(angle).toFloat()
             val y2 = cy + r * 1.05f * kotlin.math.sin(angle).toFloat()
@@ -606,7 +606,7 @@ fun ActionSubmenu(
     onOpenBlockedCalls: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val visible = remember { mutableStateOf(false) }
+    val visible = remember { mutableStateOf(value = false) }
     val scaleAnim = remember { Animatable(0f) }
     val alphaAnim = remember { Animatable(0f) }
 
@@ -651,7 +651,7 @@ fun ActionSubmenu(
     if (visible.value) {
         val accentColor by animateColorAsState(
             if (active) Pal.Green else Pal.Red,
-            tween(1800, easing = FastOutSlowInEasing),
+            tween(350, easing = FastOutSlowInEasing),
             label = "submenuAccent"
         )
 
@@ -707,19 +707,17 @@ fun ActionSubmenu(
                 SubmenuItem(
                     icon = { GearIcon(accentColor) },
                     text = settingsLabel,
-                    onClick = {
-                        onDismiss()
-                        onOpenSettings()
-                    }
-                )
+                ) {
+                    onDismiss()
+                    onOpenSettings()
+                }
                 SubmenuItem(
                     icon = { ShieldCallIcon(accentColor) },
                     text = blockedCallsLabel,
-                    onClick = {
-                        onDismiss()
-                        onOpenBlockedCalls()
-                    }
-                )
+                ) {
+                    onDismiss()
+                    onOpenBlockedCalls()
+                }
             }
         }
     }
@@ -756,7 +754,7 @@ fun BlockedCallsDrawer(
     if (isOpen || backdropAlpha > 0.01f) {
         val accentColor by animateColorAsState(
             if (active) Pal.Green else Pal.Red,
-            tween(1800, easing = FastOutSlowInEasing),
+            tween(350, easing = FastOutSlowInEasing),
             label = "blockedDrawerAccent"
         )
 
@@ -916,12 +914,12 @@ fun GlassSaveButton(
 ) {
     val colStart by animateColorAsState(
         if (active) Pal.Green else Pal.Red,
-        tween(1800, easing = FastOutSlowInEasing),
+        tween(350, easing = FastOutSlowInEasing),
         label = "saveBtnStart"
     )
     val colEnd by animateColorAsState(
         if (active) Pal.Mint else Pal.Rose,
-        tween(1800, easing = FastOutSlowInEasing),
+        tween(350, easing = FastOutSlowInEasing),
         label = "saveBtnEnd"
     )
 
@@ -991,7 +989,7 @@ fun SettingsDrawer(
         val strings = remember(tempSelectedLang) { L10n.strings(tempSelectedLang) }
         val accentColor by animateColorAsState(
             if (active) Pal.Green else Pal.Red,
-            tween(1800, easing = FastOutSlowInEasing),
+            tween(350, easing = FastOutSlowInEasing),
             label = "drawerAccent"
         )
 
