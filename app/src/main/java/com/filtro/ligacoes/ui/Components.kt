@@ -37,10 +37,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -716,7 +716,7 @@ fun ActionSubmenu(
     }
 }
 
-/** Gaveta lateral em vidro fosco para exibir o histórico de ligações bloqueadas. */
+/** Gaveta lateral em vidro fosco para exibir o histórico de ligações bloqueadas (abaixo da status bar). */
 @Suppress("UnusedBoxWithConstraintsScope")
 @Composable
 fun BlockedCallsDrawer(
@@ -759,19 +759,22 @@ fun BlockedCallsDrawer(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onClose
-                )
+                ),
+            contentAlignment = Alignment.TopEnd
         ) {
             BoxWithConstraints(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.CenterEnd
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 44.dp, end = 16.dp, bottom = 24.dp),
+                contentAlignment = Alignment.TopEnd
             ) {
                 val drawerWidth = maxWidth * 0.88f
-                val panelShape = RoundedCornerShape(topStart = 32.dp, bottomStart = 32.dp)
+                val panelShape = RoundedCornerShape(28.dp)
 
                 Column(
                     modifier = Modifier
                         .width(drawerWidth)
-                        .fillMaxHeight()
+                        .heightIn(max = 560.dp)
                         .graphicsLayer {
                             translationX = drawerWidth.toPx() * drawerOffsetFraction
                         }
@@ -779,7 +782,7 @@ fun BlockedCallsDrawer(
                         .background(
                             Brush.linearGradient(
                                 listOf(
-                                    Color(0xFF121B17).copy(alpha = 0.95f),
+                                    Color(0xFF121B17).copy(alpha = 0.96f),
                                     Color(0xFF090D0B).copy(alpha = 0.98f),
                                 )
                             )
@@ -799,8 +802,7 @@ fun BlockedCallsDrawer(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) { /* prevent click-through */ }
-                        .systemBarsPadding()
-                        .padding(top = 16.dp, bottom = 16.dp, start = 20.dp, end = 20.dp)
+                        .padding(top = 18.dp, bottom = 18.dp, start = 20.dp, end = 20.dp)
                 ) {
                     // Cabeçalho
                     Row(
@@ -810,7 +812,7 @@ fun BlockedCallsDrawer(
                     ) {
                         Text(
                             title,
-                            fontSize = 22.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = Pal.Text,
                             modifier = Modifier.weight(1f)
@@ -822,7 +824,7 @@ fun BlockedCallsDrawer(
                         // Botão fechar
                         Box(
                             modifier = Modifier
-                                .size(38.dp)
+                                .size(36.dp)
                                 .clip(CircleShape)
                                 .background(Color.White.copy(alpha = 0.10f))
                                 .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape)
@@ -833,7 +835,7 @@ fun BlockedCallsDrawer(
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
-                            Canvas(Modifier.size(16.dp)) {
+                            Canvas(Modifier.size(14.dp)) {
                                 val w = size.width
                                 val h = size.height
                                 val strokeW = 2.2.dp.toPx()
@@ -843,7 +845,7 @@ fun BlockedCallsDrawer(
                         }
                     }
 
-                    Spacer(Modifier.height(18.dp))
+                    Spacer(Modifier.height(14.dp))
 
                     // Lista de bloqueadas
                     if (log.isEmpty()) {
@@ -992,19 +994,22 @@ fun SettingsDrawer(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onClose
-                )
+                ),
+            contentAlignment = Alignment.TopEnd
         ) {
             BoxWithConstraints(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.CenterEnd
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 44.dp, end = 16.dp, bottom = 24.dp),
+                contentAlignment = Alignment.TopEnd
             ) {
                 val drawerWidth = maxWidth * 0.88f
-                val panelShape = RoundedCornerShape(topStart = 32.dp, bottomStart = 32.dp)
+                val panelShape = RoundedCornerShape(28.dp)
 
                 Column(
                     modifier = Modifier
                         .width(drawerWidth)
-                        .fillMaxHeight()
+                        .heightIn(max = 560.dp)
                         .graphicsLayer {
                             translationX = drawerWidth.toPx() * drawerOffsetFraction
                         }
@@ -1012,7 +1017,7 @@ fun SettingsDrawer(
                         .background(
                             Brush.linearGradient(
                                 listOf(
-                                    Color(0xFF121B17).copy(alpha = 0.95f),
+                                    Color(0xFF121B17).copy(alpha = 0.96f),
                                     Color(0xFF090D0B).copy(alpha = 0.98f),
                                 )
                             )
@@ -1032,8 +1037,7 @@ fun SettingsDrawer(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null
                         ) { /* Previne clique no fundo */ }
-                        .systemBarsPadding()
-                        .padding(top = 16.dp, bottom = 16.dp, start = 20.dp, end = 20.dp)
+                        .padding(top = 18.dp, bottom = 18.dp, start = 20.dp, end = 20.dp)
                 ) {
                     // Cabeçalho
                     Row(
