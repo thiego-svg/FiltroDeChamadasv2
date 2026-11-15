@@ -7,7 +7,6 @@ import android.os.UserManager
 import android.provider.ContactsContract
 import android.telecom.Call
 import android.telecom.CallScreeningService
-import android.telecom.TelecomManager
 
 /**
  * O Android chama onScreenCall() em cada ligação enquanto este app for o
@@ -50,17 +49,13 @@ class CallFilterService : CallScreeningService() {
         if ((handle != null) && (handle.scheme != "tel")) return allowResponse()
 
         val number = handle?.schemeSpecificPart.orEmpty()
-        val hidden = number.isBlank() ||
-            (details.handlePresentation != TelecomManager.PRESENTATION_ALLOWED)
 
-        val shouldBlock = if (hidden) {
-            prefs.blockHidden
-        } else {
-            when (isContact(number)) {
-                true -> false
-                false -> true
-                null -> false // não deu para consultar os contatos: deixa tocar
-            }
+        if (!prefs.blockUnknown) return allowResponse()
+
+        val shouldBlock = when (isContact(number)) {
+            true -> false
+            false -> true
+            null -> false // não deu para consultar os contatos: deixa tocar
         }
         if (!shouldBlock) return allowResponse()
 

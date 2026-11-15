@@ -18,10 +18,10 @@ class Prefs(context: Context) {
             sp.edit { putBoolean("enabled", value) }
         }
 
-    var blockHidden: Boolean
-        get() = sp.getBoolean("block_hidden", true)
+    var blockUnknown: Boolean
+        get() = sp.getBoolean("block_unknown", true)
         set(value) {
-            sp.edit { putBoolean("block_hidden", value) }
+            sp.edit { putBoolean("block_unknown", value) }
         }
 
     var blockVoip: Boolean

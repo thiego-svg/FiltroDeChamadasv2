@@ -66,6 +66,7 @@ private data class StartupData(
     val contactsOk: Boolean,
     val notifOk: Boolean,
     val batteryOk: Boolean,
+    val blockUnknown: Boolean,
     val blockVoip: Boolean,
 )
 
@@ -114,7 +115,7 @@ private fun HomeScreen(
     val prefs = remember { Prefs(ctx) }
 
     var enabled by remember { mutableStateOf(prefs.enabled) }
-    var blockHidden by remember { mutableStateOf(prefs.blockHidden) }
+    var blockUnknown by remember { mutableStateOf(prefs.blockUnknown) }
     var blockVoip by remember { mutableStateOf(prefs.blockVoip) }
     var languageCode by remember { mutableStateOf(prefs.languageCode) }
     var isSettingsOpen by remember { mutableStateOf(false) }
@@ -130,7 +131,7 @@ private fun HomeScreen(
 
     LaunchedEffect(tick) {
         enabled = prefs.enabled
-        blockHidden = prefs.blockHidden
+        blockUnknown = prefs.blockUnknown
         blockVoip = prefs.blockVoip
         languageCode = prefs.languageCode
         val data = withContext(Dispatchers.IO) {
@@ -142,6 +143,7 @@ private fun HomeScreen(
                 notifOk = Health.notificationsGranted(ctx),
                 batteryOk = ctx.getSystemService(PowerManager::class.java)
                     ?.isIgnoringBatteryOptimizations(ctx.packageName) == true,
+                blockUnknown = prefs.blockUnknown,
                 blockVoip = prefs.blockVoip,
             )
         }
@@ -151,6 +153,7 @@ private fun HomeScreen(
         contactsOk = data.contactsOk
         notifOk = data.notifOk
         batteryOk = data.batteryOk
+        blockUnknown = data.blockUnknown
         blockVoip = data.blockVoip
     }
 
@@ -231,6 +234,10 @@ private fun HomeScreen(
                             GlassSwitch(checked = enabled, active = protecting) {
                                 enabled = it
                                 prefs.enabled = it
+                                if (it && !blockUnknown && !blockVoip) {
+                                    blockUnknown = true
+                                    prefs.blockUnknown = true
+                                }
                                 onTick()
                             }
                         }
@@ -271,13 +278,18 @@ private fun HomeScreen(
                 )
                 Spacer(Modifier.height(18.dp))
                 SwitchRow(
-                    title = str.blockHiddenTitle,
-                    subtitle = str.blockHiddenSubtitle,
-                    checked = blockHidden,
+                    title = str.blockUnknownTitle,
+                    subtitle = str.blockUnknownSubtitle,
+                    checked = blockUnknown,
                     active = protecting,
                 ) {
-                    blockHidden = it
-                    prefs.blockHidden = it
+                    blockUnknown = it
+                    prefs.blockUnknown = it
+                    if (!it && !blockVoip) {
+                        enabled = false
+                        prefs.enabled = false
+                    }
+                    onTick()
                 }
                 Spacer(Modifier.height(14.dp))
                 SwitchRow(
@@ -288,6 +300,11 @@ private fun HomeScreen(
                 ) {
                     blockVoip = it
                     prefs.blockVoip = it
+                    if (!it && !blockUnknown) {
+                        enabled = false
+                        prefs.enabled = false
+                    }
+                    onTick()
                 }
             }
 
