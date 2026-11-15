@@ -66,6 +66,7 @@ private data class StartupData(
     val contactsOk: Boolean,
     val notifOk: Boolean,
     val batteryOk: Boolean,
+    val blockVoip: Boolean,
 )
 
 @Composable
@@ -114,6 +115,7 @@ private fun HomeScreen(
 
     var enabled by remember { mutableStateOf(prefs.enabled) }
     var blockHidden by remember { mutableStateOf(prefs.blockHidden) }
+    var blockVoip by remember { mutableStateOf(prefs.blockVoip) }
     var languageCode by remember { mutableStateOf(prefs.languageCode) }
     var isSettingsOpen by remember { mutableStateOf(false) }
     var isMenuOpen by remember { mutableStateOf(false) }
@@ -129,6 +131,7 @@ private fun HomeScreen(
     LaunchedEffect(tick) {
         enabled = prefs.enabled
         blockHidden = prefs.blockHidden
+        blockVoip = prefs.blockVoip
         languageCode = prefs.languageCode
         val data = withContext(Dispatchers.IO) {
             StartupData(
@@ -138,7 +141,8 @@ private fun HomeScreen(
                 contactsOk = Health.contactsGranted(ctx),
                 notifOk = Health.notificationsGranted(ctx),
                 batteryOk = ctx.getSystemService(PowerManager::class.java)
-                    ?.isIgnoringBatteryOptimizations(ctx.packageName) == true
+                    ?.isIgnoringBatteryOptimizations(ctx.packageName) == true,
+                blockVoip = prefs.blockVoip,
             )
         }
         total = data.total
@@ -147,6 +151,7 @@ private fun HomeScreen(
         contactsOk = data.contactsOk
         notifOk = data.notifOk
         batteryOk = data.batteryOk
+        blockVoip = data.blockVoip
     }
 
     val str = remember(languageCode) { L10n.strings(languageCode) }
@@ -246,7 +251,7 @@ private fun HomeScreen(
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = 16.dp, end = 16.dp)
+                        .padding(top = 16.dp, end = 16.dp),
                 ) {
                     GlassPlusButton(active = protecting) {
                         isMenuOpen = true
@@ -273,6 +278,16 @@ private fun HomeScreen(
                 ) {
                     blockHidden = it
                     prefs.blockHidden = it
+                }
+                Spacer(Modifier.height(14.dp))
+                SwitchRow(
+                    title = str.blockVoipTitle,
+                    subtitle = str.blockVoipSubtitle,
+                    checked = blockVoip,
+                    active = protecting,
+                ) {
+                    blockVoip = it
+                    prefs.blockVoip = it
                 }
             }
 

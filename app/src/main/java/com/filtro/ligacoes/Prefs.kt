@@ -24,6 +24,12 @@ class Prefs(context: Context) {
             sp.edit { putBoolean("block_hidden", value) }
         }
 
+    var blockVoip: Boolean
+        get() = sp.getBoolean("block_voip", true)
+        set(value) {
+            sp.edit { putBoolean("block_voip", value) }
+        }
+
     var languageCode: String
         get() = sp.getString("language_code", "pt-BR") ?: "pt-BR"
         set(value) {
