@@ -6,14 +6,14 @@ enum class AppLanguage(
     val displayName: String,
     val nativeName: String,
 ) {
-    PT_BR("pt-BR", "🇧🇷", "Português (Brasil)", "Português (Brasil)"),
-    EN_US("en-US", "🇺🇸", "Inglês (EUA)", "English (US)"),
-    ZH_CN("zh-CN", "🇨🇳", "Chinês", "中文 (简体)"),
-    FR_FR("fr-FR", "🇫🇷", "Francês", "Français"),
     DE_DE("de-DE", "🇩🇪", "Alemão", "Deutsch"),
+    ZH_CN("zh-CN", "🇨🇳", "Chinês", "中文 (简体)"),
     ES_ES("es-ES", "🇪🇸", "Espanhol", "Español"),
+    FR_FR("fr-FR", "🇫🇷", "Francês", "Français"),
+    EN_US("en-US", "🇺🇸", "Inglês (EUA)", "English (US)"),
+    EN_GB("en-GB", "🇬🇧", "Inglês (UK)", "English (UK)"),
     IT_IT("it-IT", "🇮🇹", "Italiano", "Italiano"),
-    EN_GB("en-GB", "🇬🇧", "Inglês (UK)", "English (UK)");
+    PT_BR("pt-BR", "🇧🇷", "Português (Brasil)", "Português (Brasil)");
 
     companion object {
         fun fromCode(code: String): AppLanguage =
