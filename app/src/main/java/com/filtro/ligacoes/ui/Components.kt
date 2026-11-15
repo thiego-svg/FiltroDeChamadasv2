@@ -1,10 +1,12 @@
 package com.filtro.ligacoes.ui
 
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.TransformOrigin
 import com.filtro.ligacoes.BlockedCall
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
@@ -584,7 +586,7 @@ fun SubmenuItem(
     }
 }
 
-/** Submenu flutuante em vidro fosco acionado pelo botão +. */
+/** Submenu flutuante em vidro fosco acionado pelo botão +, abrindo suavemente como uma bolha. */
 @Composable
 fun ActionSubmenu(
     isOpen: Boolean,
@@ -595,7 +597,49 @@ fun ActionSubmenu(
     onOpenBlockedCalls: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    if (isOpen) {
+    val visible = remember { mutableStateOf(false) }
+    val scaleAnim = remember { Animatable(0f) }
+    val alphaAnim = remember { Animatable(0f) }
+
+    LaunchedEffect(isOpen) {
+        if (isOpen) {
+            visible.value = true
+            scaleAnim.snapTo(0.4f)
+            alphaAnim.snapTo(0f)
+            launch {
+                scaleAnim.animateTo(
+                    targetValue = 1f,
+                    animationSpec = spring(
+                        dampingRatio = 0.55f,
+                        stiffness = 320f
+                    )
+                )
+            }
+            launch {
+                alphaAnim.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(220, easing = FastOutSlowInEasing)
+                )
+            }
+        } else {
+            launch {
+                scaleAnim.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(180, easing = FastOutSlowInEasing)
+                )
+            }
+            launch {
+                alphaAnim.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(180, easing = FastOutSlowInEasing)
+                )
+            }.invokeOnCompletion {
+                visible.value = false
+            }
+        }
+    }
+
+    if (visible.value) {
         val accentColor by animateColorAsState(
             if (active) Pal.Green else Pal.Red,
             tween(1800, easing = FastOutSlowInEasing),
@@ -605,7 +649,7 @@ fun ActionSubmenu(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.35f))
+                .background(Color.Black.copy(alpha = 0.35f * alphaAnim.value))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -618,6 +662,12 @@ fun ActionSubmenu(
                 modifier = Modifier
                     .padding(top = 70.dp, end = 20.dp)
                     .width(230.dp)
+                    .graphicsLayer {
+                        scaleX = scaleAnim.value
+                        scaleY = scaleAnim.value
+                        alpha = alphaAnim.value
+                        transformOrigin = TransformOrigin(1f, 0f)
+                    }
                     .clip(menuShape)
                     .background(
                         Brush.linearGradient(
