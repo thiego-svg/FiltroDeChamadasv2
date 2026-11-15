@@ -19,7 +19,7 @@ class Prefs(context: Context) {
         }
 
     var blockUnknown: Boolean
-        get() = sp.getBoolean("block_unknown", true)
+        get() = sp.getBoolean("block_unknown", sp.getBoolean("block_hidden", true))
         set(value) {
             sp.edit { putBoolean("block_unknown", value) }
         }
