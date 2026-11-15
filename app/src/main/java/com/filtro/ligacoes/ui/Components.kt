@@ -432,34 +432,43 @@ fun ShieldOrb(active: Boolean, modifier: Modifier = Modifier) {
         )
 
         val baseInk = Color.White.copy(alpha = 0.55f + (0.45f * alphaMult))
-        val checkAlpha = activeProgress
-        val xAlpha = 1f - activeProgress
+        val p = activeProgress // 0f = X, 1f = Check
 
-        // Desenha o check (✓) quando a proteção estiver ativa
-        if (checkAlpha > 0.01f) {
-            val checkPath = Path().apply {
-                moveTo(w * 0.40f, h * 0.52f)
-                lineTo(w * 0.47f, h * 0.60f)
-                lineTo(w * 0.61f, h * 0.43f)
-            }
-            drawPath(
-                checkPath,
-                color = baseInk.copy(alpha = baseInk.alpha * checkAlpha),
-                style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-            )
+        fun lerp(start: Float, stop: Float, fraction: Float): Float {
+            return start + fraction * (stop - start)
         }
 
-        // Desenha o X (❌) quando a proteção estiver desativada
-        if (xAlpha > 0.01f) {
-            val xColor = baseInk.copy(alpha = baseInk.alpha * xAlpha)
-            val strokeW = 5.dp.toPx()
-            drawLine(
-                color = xColor,
-                start = Offset(w * 0.42f, h * 0.44f),
-                end = Offset(w * 0.58f, h * 0.60f),
-                strokeWidth = strokeW,
-                cap = StrokeCap.Round
-            )
+        val strokeW = 5.dp.toPx()
+
+        val p1x = w * lerp(0.42f, 0.40f, p)
+        val p1y = h * lerp(0.44f, 0.52f, p)
+        val p2x = w * lerp(0.50f, 0.47f, p)
+        val p2y = h * lerp(0.52f, 0.60f, p)
+        val p3x = w * lerp(0.58f, 0.61f, p)
+        val p3y = h * lerp(0.60f, 0.43f, p)
+
+        // Traço 1 (metade 1 do X / primeiro segmento do Check)
+        drawLine(
+            color = baseInk,
+            start = Offset(p1x, p1y),
+            end = Offset(p2x, p2y),
+            strokeWidth = strokeW,
+            cap = StrokeCap.Round
+        )
+
+        // Traço 2 (metade 2 do X / segundo segmento do Check)
+        drawLine(
+            color = baseInk,
+            start = Offset(p2x, p2y),
+            end = Offset(p3x, p3y),
+            strokeWidth = strokeW,
+            cap = StrokeCap.Round
+        )
+
+        // Segundo traço do X (fade out ao ativar a proteção)
+        val x2Alpha = (1f - p) * baseInk.alpha
+        if (x2Alpha > 0.01f) {
+            val xColor = baseInk.copy(alpha = x2Alpha)
             drawLine(
                 color = xColor,
                 start = Offset(w * 0.58f, h * 0.44f),
