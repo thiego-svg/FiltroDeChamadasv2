@@ -56,6 +56,17 @@ import com.filtro.ligacoes.Health
 import com.filtro.ligacoes.Prefs
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+private data class StartupData(
+    val total: Int,
+    val log: List<BlockedCall>,
+    val roleHeld: Boolean,
+    val contactsOk: Boolean,
+    val notifOk: Boolean,
+    val batteryOk: Boolean,
+)
 
 @Composable
 fun FiltroApp() {
@@ -71,8 +82,11 @@ fun FiltroApp() {
 
     LaunchedEffect(tick) {
         enabled = prefs.enabled
-        roleHeld = Health.roleHeld(ctx)
-        contactsOk = Health.contactsGranted(ctx)
+        val (held, contacts) = withContext(Dispatchers.IO) {
+            Pair(Health.roleHeld(ctx), Health.contactsGranted(ctx))
+        }
+        roleHeld = held
+        contactsOk = contacts
     }
 
     val ready = roleHeld && contactsOk
@@ -116,13 +130,23 @@ private fun HomeScreen(
         enabled = prefs.enabled
         blockHidden = prefs.blockHidden
         languageCode = prefs.languageCode
-        total = prefs.totalBlocked
-        log = prefs.log()
-        roleHeld = Health.roleHeld(ctx)
-        contactsOk = Health.contactsGranted(ctx)
-        notifOk = Health.notificationsGranted(ctx)
-        batteryOk = ctx.getSystemService(PowerManager::class.java)
-            ?.isIgnoringBatteryOptimizations(ctx.packageName) == true
+        val data = withContext(Dispatchers.IO) {
+            StartupData(
+                total = prefs.totalBlocked,
+                log = prefs.log(),
+                roleHeld = Health.roleHeld(ctx),
+                contactsOk = Health.contactsGranted(ctx),
+                notifOk = Health.notificationsGranted(ctx),
+                batteryOk = ctx.getSystemService(PowerManager::class.java)
+                    ?.isIgnoringBatteryOptimizations(ctx.packageName) == true
+            )
+        }
+        total = data.total
+        log = data.log
+        roleHeld = data.roleHeld
+        contactsOk = data.contactsOk
+        notifOk = data.notifOk
+        batteryOk = data.batteryOk
     }
 
     val str = remember(languageCode) { L10n.strings(languageCode) }
