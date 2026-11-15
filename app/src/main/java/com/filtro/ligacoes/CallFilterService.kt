@@ -59,7 +59,7 @@ class CallFilterService : CallScreeningService() {
     private fun allowResponse(): CallResponse =
         CallResponse.Builder().build()
 
-    // Recusa na hora, como se você tivesse tocado em "recusar". O telefone não toca.
+    //
     private fun rejectResponse(): CallResponse =
         CallResponse.Builder()
             .setDisallowCall(true)

@@ -24,6 +24,12 @@ class Prefs(context: Context) {
             sp.edit { putBoolean("block_hidden", value) }
         }
 
+    var languageCode: String
+        get() = sp.getString("language_code", "pt-BR") ?: "pt-BR"
+        set(value) {
+            sp.edit { putString("language_code", value) }
+        }
+
     val totalBlocked: Int
         get() = sp.getInt("total", 0)
 

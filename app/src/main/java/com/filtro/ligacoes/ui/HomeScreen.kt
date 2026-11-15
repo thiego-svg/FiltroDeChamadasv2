@@ -8,11 +8,14 @@ import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -43,6 +46,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -56,15 +60,6 @@ import java.util.Locale
 
 @Composable
 fun FiltroApp() {
-    FiltroTheme {
-        AuroraBackground {
-            HomeScreen()
-        }
-    }
-}
-
-@Composable
-private fun HomeScreen() {
     val ctx = LocalContext.current
     val prefs = remember { Prefs(ctx) }
 
@@ -72,7 +67,43 @@ private fun HomeScreen() {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { tick++ }
 
     var enabled by remember { mutableStateOf(prefs.enabled) }
+    var roleHeld by remember { mutableStateOf(false) }
+    var contactsOk by remember { mutableStateOf(false) }
+
+    LaunchedEffect(tick) {
+        enabled = prefs.enabled
+        roleHeld = Health.roleHeld(ctx)
+        contactsOk = Health.contactsGranted(ctx)
+    }
+
+    val ready = roleHeld && contactsOk
+    val protecting = enabled && ready
+
+    FiltroTheme(active = protecting) {
+        AuroraBackground(active = protecting) {
+            HomeScreen(
+                protecting = protecting,
+                tick = tick,
+                onTick = { tick++ },
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeScreen(
+    protecting: Boolean,
+    tick: Int,
+    onTick: () -> Unit,
+) {
+    val ctx = LocalContext.current
+    val prefs = remember { Prefs(ctx) }
+
+    var enabled by remember { mutableStateOf(prefs.enabled) }
     var blockHidden by remember { mutableStateOf(prefs.blockHidden) }
+    var languageCode by remember { mutableStateOf(prefs.languageCode) }
+    var isSettingsOpen by remember { mutableStateOf(false) }
+
     var roleHeld by remember { mutableStateOf(value = false) }
     var contactsOk by remember { mutableStateOf(value = false) }
     var notifOk by remember { mutableStateOf(value = true) }
@@ -83,6 +114,7 @@ private fun HomeScreen() {
     LaunchedEffect(tick) {
         enabled = prefs.enabled
         blockHidden = prefs.blockHidden
+        languageCode = prefs.languageCode
         total = prefs.totalBlocked
         log = prefs.log()
         roleHeld = Health.roleHeld(ctx)
@@ -92,173 +124,217 @@ private fun HomeScreen() {
             ?.isIgnoringBatteryOptimizations(ctx.packageName) == true
     }
 
+    val str = remember(languageCode) { L10n.strings(languageCode) }
+
     val roleLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
-    ) { tick++ }
+    ) { onTick() }
     val contactsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { tick++ }
+    ) { onTick() }
     val notifLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { tick++ }
+    ) { onTick() }
 
     val ready = roleHeld && contactsOk
-    val protecting = enabled && ready
     val shownTotal by animateIntAsState(total, tween(800), label = "total")
+    val primaryColor by animateColorAsState(if (protecting) Pal.Green else Pal.Red, tween(1800, easing = FastOutSlowInEasing), label = "primaryColor")
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .systemBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Column(Modifier.entrance(0).padding(top = 8.dp, start = 4.dp)) {
-            Text("Filtro de Chamadas", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Pal.Text)
-            Text("Só toca quem está nos seus contatos.", fontSize = 14.sp, color = Pal.TextDim)
-        }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            // Cabeçalho (título)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .entrance(0)
+                    .padding(top = 8.dp, start = 4.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(str.appTitle, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Pal.Text)
+                }
+            }
 
-        // Cartão principal
-        GlassCard(Modifier.entrance(1)) {
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                ShieldOrb(protecting)
-                Spacer(Modifier.height(6.dp))
+            // Cartão principal com o botão de engrenagem sobreposto na primeira caixa de seleção
+            Box(modifier = Modifier.entrance(1).fillMaxWidth()) {
+                GlassCard(active = protecting) {
+                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        ShieldOrb(protecting)
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            when {
+                                !ready -> str.statusNeedsSetup
+                                protecting -> str.statusActive
+                                else -> str.statusDisabled
+                            },
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Pal.Text,
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            when {
+                                !ready -> str.descNeedsSetup
+                                protecting -> str.descActive
+                                else -> str.descDisabled
+                            },
+                            fontSize = 14.sp,
+                            color = Pal.TextDim,
+                            textAlign = TextAlign.Center,
+                        )
+                        Spacer(Modifier.height(18.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                if (enabled) str.switchOn else str.switchOff,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Pal.Text,
+                            )
+                            Spacer(Modifier.width(14.dp))
+                            GlassSwitch(checked = enabled, active = protecting) {
+                                enabled = it
+                                prefs.enabled = it
+                                onTick()
+                            }
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(shownTotal.toString(), fontSize = 34.sp, fontWeight = FontWeight.Bold, color = primaryColor)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                str.callsBlockedLabel,
+                                fontSize = 14.sp,
+                                color = Pal.TextDim,
+                                modifier = Modifier.padding(bottom = 6.dp),
+                            )
+                        }
+                    }
+                }
+                // Botão de engrenagem posicionado exatamente sobre a sobreposição da primeira caixa de seleção
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 16.dp, end = 16.dp)
+                ) {
+                    GlassSettingsButton(active = protecting) {
+                        isSettingsOpen = true
+                    }
+                }
+            }
+
+            // Modo de bloqueio
+            GlassCard(modifier = Modifier.entrance(2), active = protecting) {
+                SectionTitle(str.blockModeTitle)
+                Spacer(Modifier.height(10.dp))
                 Text(
-                    when {
-                        !ready -> "Falta configurar"
-                        protecting -> "Proteção ativa"
-                        else -> "Proteção pausada"
-                    },
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Pal.Text,
-                )
-                Text(
-                    when {
-                        !ready -> "Conclua os passos mais abaixo para começar."
-                        protecting -> "Ligações de números fora da agenda são barradas."
-                        else -> "Todas as ligações tocam normalmente."
-                    },
+                    str.blockModeDesc,
                     fontSize = 14.sp,
+                    lineHeight = 20.sp,
                     color = Pal.TextDim,
                 )
                 Spacer(Modifier.height(18.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        if (enabled) "Ligado" else "Desligado",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Pal.Text,
-                    )
-                    Spacer(Modifier.width(14.dp))
-                    GlassSwitch(checked = enabled) {
-                        enabled = it
-                        prefs.enabled = it
-                    }
-                }
-                Spacer(Modifier.height(16.dp))
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(shownTotal.toString(), fontSize = 34.sp, fontWeight = FontWeight.Bold, color = Pal.Green)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        "chamadas barradas",
-                        fontSize = 14.sp,
-                        color = Pal.TextDim,
-                        modifier = Modifier.padding(bottom = 6.dp),
-                    )
+                SwitchRow(
+                    title = str.blockHiddenTitle,
+                    subtitle = str.blockHiddenSubtitle,
+                    checked = blockHidden,
+                    active = protecting,
+                ) {
+                    blockHidden = it
+                    prefs.blockHidden = it
                 }
             }
-        }
 
-        // Modo de bloqueio
-        GlassCard(Modifier.entrance(2)) {
-            SectionTitle("Quando um desconhecido ligar")
-            Spacer(Modifier.height(10.dp))
-            Text(
-                "O telefone não toca. A ligação é recusada na hora, como se você tivesse " +
-                    "tocado em recusar. O que quem ligou ouve (ocupado ou caixa postal) " +
-                    "depende da operadora.",
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                color = Pal.TextDim,
-            )
-            Spacer(Modifier.height(18.dp))
-            SwitchRow(
-                title = "Bloquear números ocultos",
-                subtitle = "Chamadas sem identificação (número privado)",
-                checked = blockHidden,
-            ) {
-                blockHidden = it
-                prefs.blockHidden = it
-            }
-        }
-
-        // Configuração
-        GlassCard(Modifier.entrance(3)) {
-            SectionTitle("Configuração")
-            Spacer(Modifier.height(6.dp))
-            SetupRow(
-                done = contactsOk,
-                title = "Acesso aos contatos",
-                subtitle = "Para saber quem está na sua agenda",
-                action = "Permitir",
-            ) { contactsLauncher.launch(Manifest.permission.READ_CONTACTS) }
-            SetupRow(
-                done = roleHeld,
-                title = "App de filtro de chamadas",
-                subtitle = "O Android pergunta uma vez. Fica valendo após reiniciar.",
-                action = "Ativar",
-            ) {
-                val rm = ctx.getSystemService(RoleManager::class.java)
-                if ((rm != null) && rm.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
-                    roleLauncher.launch(rm.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING))
-                }
-            }
-            if (Build.VERSION.SDK_INT >= 33) {
+            // Configuração
+            GlassCard(modifier = Modifier.entrance(3), active = protecting) {
+                SectionTitle(str.setupTitle)
+                Spacer(Modifier.height(6.dp))
                 SetupRow(
-                    done = notifOk,
-                    title = "Avisos",
-                    subtitle = "Para avisar se a proteção for desfeita",
-                    action = "Permitir",
-                ) { notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
+                    done = contactsOk,
+                    title = str.setupContactsTitle,
+                    subtitle = str.setupContactsSubtitle,
+                    action = str.setupContactsAction,
+                    active = protecting,
+                ) { contactsLauncher.launch(Manifest.permission.READ_CONTACTS) }
+                SetupRow(
+                    done = roleHeld,
+                    title = str.setupRoleTitle,
+                    subtitle = str.setupRoleSubtitle,
+                    action = str.setupRoleAction,
+                    active = protecting,
+                ) {
+                    val rm = ctx.getSystemService(RoleManager::class.java)
+                    if ((rm != null) && rm.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
+                        roleLauncher.launch(rm.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING))
+                    }
+                }
+                if (Build.VERSION.SDK_INT >= 33) {
+                    SetupRow(
+                        done = notifOk,
+                        title = str.setupNotifTitle,
+                        subtitle = str.setupNotifSubtitle,
+                        action = str.setupNotifAction,
+                        active = protecting,
+                    ) { notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
+                }
+                SetupRow(
+                    done = batteryOk,
+                    title = str.setupBatteryTitle,
+                    subtitle = str.setupBatterySubtitle,
+                    action = str.setupBatteryAction,
+                    active = protecting,
+                ) {
+                    ctx.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                }
             }
-            SetupRow(
-                done = batteryOk,
-                title = "Sem restrição de bateria",
-                subtitle = "Recomendado: escolha este app e marque Sem restrições",
-                action = "Abrir",
-            ) {
-                ctx.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-            }
-        }
 
-        // Histórico
-        GlassCard(Modifier.entrance(4)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) { SectionTitle("Últimas barradas") }
-                if (log.isNotEmpty()) {
-                    PillButton("Limpar") {
-                        prefs.clearLog()
-                        log = emptyList()
+            // Histórico
+            GlassCard(modifier = Modifier.entrance(4), active = protecting) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) { SectionTitle(str.logTitle) }
+                    if (log.isNotEmpty()) {
+                        PillButton(str.logClearAction, active = protecting) {
+                            prefs.clearLog()
+                            log = emptyList()
+                        }
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                if (log.isEmpty()) {
+                    Text(str.logEmpty, fontSize = 14.sp, color = Pal.TextDim)
+                } else {
+                    val fmt = remember { SimpleDateFormat("dd/MM  HH:mm", Locale.forLanguageTag("pt-BR")) }
+                    log.take(8).forEach { (time, number) ->
+                        LogRow(
+                            number = number.ifBlank { str.logHiddenNumber },
+                            whenText = fmt.format(Date(time)),
+                            rejectedText = str.logRejected,
+                            primaryColor = primaryColor,
+                        )
                     }
                 }
             }
-            Spacer(Modifier.height(10.dp))
-            if (log.isEmpty()) {
-                Text("Nenhuma chamada barrada ainda.", fontSize = 14.sp, color = Pal.TextDim)
-            } else {
-                val fmt = remember { SimpleDateFormat("dd/MM  HH:mm", Locale.forLanguageTag("pt-BR")) }
-                log.take(8).forEach { (time, number) ->
-                    LogRow(
-                        number = number.ifBlank { "Número oculto" },
-                        whenText = fmt.format(Date(time)),
-                    )
-                }
-            }
+
+            Spacer(Modifier.height(24.dp))
         }
 
-        Spacer(Modifier.height(24.dp))
+        // Aba lateral de configurações
+        SettingsDrawer(
+            isOpen = isSettingsOpen,
+            active = protecting,
+            currentLanguageCode = languageCode,
+            onSaveLanguage = { newLang ->
+                prefs.languageCode = newLang
+                languageCode = newLang
+            },
+            onClose = { isSettingsOpen = false },
+        )
     }
 }
 
@@ -272,6 +348,7 @@ private fun SwitchRow(
     @Suppress("SameParameterValue") title: String,
     @Suppress("SameParameterValue") subtitle: String,
     checked: Boolean,
+    active: Boolean = true,
     onChange: (Boolean) -> Unit,
 ) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -280,7 +357,7 @@ private fun SwitchRow(
             Text(subtitle, color = Pal.TextDim, fontSize = 12.sp, lineHeight = 16.sp)
         }
         Spacer(Modifier.width(12.dp))
-        GlassSwitch(checked = checked, onCheckedChange = onChange)
+        GlassSwitch(checked = checked, active = active, onCheckedChange = onChange)
     }
 }
 
@@ -290,6 +367,7 @@ private fun SetupRow(
     title: String,
     subtitle: String,
     action: String,
+    active: Boolean = true,
     onAction: () -> Unit,
 ) {
     Row(
@@ -298,7 +376,7 @@ private fun SetupRow(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StatusDot(done)
+        StatusDot(done = done, active = active)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(title, color = Pal.Text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
@@ -306,14 +384,17 @@ private fun SetupRow(
         }
         if (!done) {
             Spacer(Modifier.width(10.dp))
-            PillButton(action, onClick = onAction)
+            PillButton(action, active = active, onClick = onAction)
         }
     }
 }
 
 @Composable
-private fun StatusDot(done: Boolean) {
+private fun StatusDot(done: Boolean, active: Boolean = true) {
     val fill by animateFloatAsState(if (done) 1f else 0f, tween(400), label = "dot")
+    val colStart by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(400), label = "dotStart")
+    val colEnd by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(400), label = "dotEnd")
+
     Canvas(Modifier.size(26.dp)) {
         val r = size.minDimension / 2f
         drawCircle(
@@ -322,7 +403,7 @@ private fun StatusDot(done: Boolean) {
             style = Stroke(width = 1.5.dp.toPx()),
         )
         drawCircle(
-            brush = Brush.linearGradient(listOf(Pal.Green, Pal.Mint)),
+            brush = Brush.linearGradient(listOf(colStart, colEnd)),
             radius = r * fill,
             center = center,
         )
@@ -344,7 +425,7 @@ private fun StatusDot(done: Boolean) {
 }
 
 @Composable
-private fun LogRow(number: String, whenText: String) {
+private fun LogRow(number: String, whenText: String, rejectedText: String, primaryColor: Color = Pal.Green) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -356,8 +437,8 @@ private fun LogRow(number: String, whenText: String) {
             Text(whenText, color = Pal.TextDim, fontSize = 12.sp)
         }
         Text(
-            "recusada",
-            color = Pal.Green,
+            rejectedText,
+            color = primaryColor,
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
         )

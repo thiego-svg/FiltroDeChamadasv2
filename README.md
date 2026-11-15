@@ -1,57 +1,45 @@
-# Filtro de Chamadas (Android)
+# Filtro de Chamadas (Android) - Versão 2.0
 
-Rejeita automaticamente ligações de números que não estão nos seus contatos.
-Kotlin + Jetpack Compose, Android 10 ou mais novo (API 29+).
+Aplicativo moderno em Kotlin e Jetpack Compose para Android 10+ (API 29+) que rejeita automaticamente ligações de números desconhecidos (fora da sua agenda de contatos).
 
-## Como gerar o .apk
+---
 
-**Opção 1 – GitHub (não instala nada no PC)**
-1. Crie um repositório no GitHub e envie esta pasta inteira (inclusive `.github`).
-2. Abra a aba **Actions**, rode **Gerar APK** (ou espere o push terminar).
-3. Ao fim, baixe o artefato **FiltroDeChamadas-apk** (dentro dele está o `app-debug.apk`).
+## Novidades da Versão 2.0
 
-**Opção 2 – Android Studio**
-1. **File > Open** e escolha a pasta `FiltroDeChamadas` (a que tem o `gradlew`). Espere o *Sync*.
-2. Se o Studio oferecer atualizar o Android Gradle Plugin, pode recusar (o projeto já está configurado).
-3. **Build > Build APK(s)**. Quando terminar, clique em *locate* no aviso:
-   o arquivo é `app/build/outputs/apk/debug/app-debug.apk`.
+- 🌟 **Interface Glassmorphism & Frosty Blur**: Design refinado em vidro fosco com efeitos translúcidos e bordas luminosas.
+- 🌌 **Fundo Aurora Animado**: Gradientes dinâmicos que se adaptam suavemente ao estado de proteção (Ativo / Desativado).
+- ⚙️ **Painel de Configurações Lateral**: Gaveta deslizante (*Right-to-Left Drawer*) em vidro fosco acessível por botão de engrenagem flutuante na tela inicial.
+- 🌍 **Suporte a 8 Idiomas**: Alterne instantaneamente entre:
+  - 🇧🇷 Português do Brasil (`pt-BR`)
+  - 🇺🇸 Inglês (EUA) (`en-US`)
+  - 🇨🇳 Chinês (`zh-CN`)
+  - 🇫🇷 Francês (`fr-FR`)
+  - 🇩🇪 Alemão (`de-DE`)
+  - 🇪🇸 Espanhol (`es-ES`)
+  - 🇮🇹 Italiano (`it-IT`)
+  - 🇬🇧 Inglês (Reino Unido) (`en-GB`)
+- ⏱️ **Transições Ultra-Fluidas**: Animações suaves de 1.8 segundos com atenuação natural (*FastOutSlowInEasing*).
 
-Se o Sync reclamar de JDK, vá em **Settings > Build, Execution, Deployment > Build Tools > Gradle**
-e escolha *Gradle JDK* = JDK 24 (ou 17 a 23; o "jbr" que vem com o Studio também serve).
-Esta versão usa Gradle 8.14.3, plugin do Android 8.10.1 e Kotlin 2.1.21, que rodam no JDK 24.
-O JDK 25 **não** funciona com este Gradle.
-Não envie ao GitHub o arquivo `gradle/gradle-daemon-jvm.properties` (já está no `.gitignore`):
-ele quebra o build do GitHub Actions.
+---
 
-**Opção 3 – Terminal** (com JDK 17 a 24 e Android SDK instalados)
-`gradle assembleDebug` e pegue `app/build/outputs/apk/debug/app-debug.apk`.
+## Como gerar o APK
 
-Para instalar, copie o .apk para o celular e permita "instalar apps desconhecidos".
+### Opção 1 – GitHub Actions (Recomendado)
+1. Crie um repositório no GitHub e envie este projeto inteiro.
+2. Acesse a aba **Actions** no GitHub para compilar automaticamente o APK.
 
-## Primeiro uso
+### Opção 2 – Android Studio
+1. Abra o Android Studio e escolha **File > Open** selecionando a pasta do projeto.
+2. Aguarde o *Gradle Sync*.
+3. Vá em **Build > Build Bundle(s) / APK(s) > Build APK(s)**.
+4. O arquivo gerado estará em `app/build/outputs/apk/debug/app-debug.apk`.
 
-1. **Acesso aos contatos** – toque em *Permitir*.
-2. **App de filtro de chamadas** – toque em *Ativar* e confirme no aviso do Android.
-3. (Android 13+) permita os avisos e, nas configurações de bateria, deixe o app **Sem restrições**.
+---
 
-Depois disso o Android chama o app em toda ligação recebida, mesmo após reiniciar,
-sem precisar de serviço rodando em segundo plano.
+## Primeiro Uso e Permissões
 
-## O que acontece com um desconhecido
+1. **Acesso aos contatos**: Permita o acesso para que o app saiba quem está na sua agenda.
+2. **App de filtro de chamadas**: Ative a função padrão de triagem de chamadas do Android.
+3. **Bateria e Notificações**: Em dispositivos modernos, garanta que o app esteja configurado como **Sem restrições de bateria**.
 
-A ligação é **rejeitada** na hora, como se você tivesse tocado em recusar. O telefone não toca.
-Se quem ligou ouve ocupado ou cai na caixa postal depende da operadora.
-Teste com um número que não está na sua agenda.
-
-## Limitações
-
-- Logo após reiniciar, **antes do primeiro desbloqueio** (PIN/biometria), os contatos
-  ainda estão criptografados e o app não consegue filtrar. As ligações tocam normalmente.
-  Depois de desbloquear, a filtragem passa a valer.
-- Em caso de erro (sem permissão, contatos indisponíveis) a ligação passa em vez de ser
-  barrada, para nunca bloquear um contato seu por engano.
-- Chamadas por VoIP/SIP não são filtradas, e ligações de emergência nunca passam pelo filtro.
-- Alguns fabricantes (Xiaomi, Samsung, Huawei...) matam apps em segundo plano. Se o filtro
-  falhar, libere a bateria e o início automático do app.
-- Esta versão é um APK de teste (assinado com a chave de debug) e foi escrita sem
-  poder rodar num aparelho. Se o build der erro, mande a mensagem que eu corrijo.
+O app utiliza a API oficial `CallScreeningService`, funcionando de forma eficiente em segundo plano sem consumir bateria desnecessária.

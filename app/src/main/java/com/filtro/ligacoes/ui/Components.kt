@@ -17,12 +17,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,14 +32,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,9 +64,12 @@ import androidx.compose.ui.unit.sp
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 
-/** Fundo preto com manchas verdes que derivam devagar (a "aurora"). */
+/** Fundo preto com manchas de cor (verde ativa / vermelha desativada) derivando suavemente. */
 @Composable
-fun AuroraBackground(content: @Composable BoxScope.() -> Unit) {
+fun AuroraBackground(
+    active: Boolean = true,
+    content: @Composable BoxScope.() -> Unit
+) {
     val t = rememberInfiniteTransition(label = "aurora")
     val a by t.animateFloat(
         0f, 1f,
@@ -77,32 +87,62 @@ fun AuroraBackground(content: @Composable BoxScope.() -> Unit) {
         label = "c",
     )
 
+    // Leve efeito da luz vermelha diminuindo (pulsando suavemente para baixo quando desativado)
+    val redLightDecreasing by t.animateFloat(
+        1.0f, 0.35f,
+        infiniteRepeatable(tween(3800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "redLightDecreasing",
+    )
+
+    val bgMiddle by animateColorAsState(
+        if (active) Color(0xFF041510) else Pal.DeepRed,
+        tween(1800, easing = FastOutSlowInEasing),
+        label = "bgMiddle"
+    )
+    val colorA by animateColorAsState(
+        if (active) Pal.Green else Pal.Red,
+        tween(1800, easing = FastOutSlowInEasing),
+        label = "colorA"
+    )
+    val colorB by animateColorAsState(
+        if (active) Pal.Mint else Pal.Crimson,
+        tween(1800, easing = FastOutSlowInEasing),
+        label = "colorB"
+    )
+    val colorC by animateColorAsState(
+        if (active) Pal.Lime else Pal.Rose,
+        tween(1800, easing = FastOutSlowInEasing),
+        label = "colorC"
+    )
+
+    val lightMult = if (active) 1.0f else redLightDecreasing
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Pal.Black, Color(0xFF041510), Pal.Black)))
+            .background(Brush.verticalGradient(listOf(Pal.Black, bgMiddle, Pal.Black)))
             .drawBehind {
                 val w = size.width
                 val h = size.height
                 drawRect(
                     Brush.radialGradient(
-                        listOf(Pal.Green.copy(alpha = 0.38f), Color.Transparent),
+                        listOf(colorA.copy(alpha = 0.38f * lightMult), Color.Transparent),
                         center = Offset(w * (0.10f + (0.60f * a)), h * (0.08f + (0.20f * b))),
-                        radius = w * 0.95f,
+                        radius = w * 0.95f * lightMult,
                     )
                 )
                 drawRect(
                     Brush.radialGradient(
-                        listOf(Pal.Mint.copy(alpha = 0.26f), Color.Transparent),
+                        listOf(colorB.copy(alpha = 0.26f * lightMult), Color.Transparent),
                         center = Offset(w * (0.95f - (0.60f * b)), h * (0.45f + (0.18f * c))),
-                        radius = w * 0.85f,
+                        radius = w * 0.85f * lightMult,
                     )
                 )
                 drawRect(
                     Brush.radialGradient(
-                        listOf(Pal.Lime.copy(alpha = 0.18f), Color.Transparent),
+                        listOf(colorC.copy(alpha = 0.18f * lightMult), Color.Transparent),
                         center = Offset(w * (0.20f + (0.50f * c)), h * (0.95f - (0.25f * a))),
-                        radius = w * 0.90f,
+                        radius = w * 0.90f * lightMult,
                     )
                 )
             },
@@ -110,9 +150,29 @@ fun AuroraBackground(content: @Composable BoxScope.() -> Unit) {
     )
 }
 
-/** Cartão "vidro fosco": preenchimento translúcido + borda com brilho. */
+/** Cartão "vidro fosco": preenchimento translúcido + borda com brilho ajustada ao tema. */
 @Composable
-fun GlassCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun GlassCard(
+    modifier: Modifier = Modifier,
+    active: Boolean = true,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val accentColor by animateColorAsState(
+        if (active) Pal.Green else Pal.Red,
+        tween(1800, easing = FastOutSlowInEasing),
+        label = "cardAccent"
+    )
+    val bgAlphaTop by animateFloatAsState(
+        targetValue = if (active) 0.13f else 0.08f,
+        animationSpec = tween(1800, easing = FastOutSlowInEasing),
+        label = "cardBgAlphaTop"
+    )
+    val bgAlphaBottom by animateFloatAsState(
+        targetValue = if (active) 0.04f else 0.02f,
+        animationSpec = tween(1800, easing = FastOutSlowInEasing),
+        label = "cardBgAlphaBottom"
+    )
+
     val shape = RoundedCornerShape(28.dp)
     Column(
         modifier = modifier
@@ -120,7 +180,7 @@ fun GlassCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.()
             .clip(shape)
             .background(
                 Brush.linearGradient(
-                    listOf(Color.White.copy(alpha = 0.13f), Color.White.copy(alpha = 0.04f))
+                    listOf(Color.White.copy(alpha = bgAlphaTop), Color.White.copy(alpha = bgAlphaBottom))
                 )
             )
             .border(
@@ -129,7 +189,7 @@ fun GlassCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.()
                     listOf(
                         Color.White.copy(alpha = 0.40f),
                         Color.White.copy(alpha = 0.04f),
-                        Pal.Green.copy(alpha = 0.30f)
+                        accentColor.copy(alpha = 0.30f)
                     )
                 ),
                 shape
@@ -157,6 +217,7 @@ fun Modifier.entrance(index: Int): Modifier {
 fun GlassSwitch(
     checked: Boolean,
     modifier: Modifier = Modifier,
+    active: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     val thumbX by animateDpAsState(
@@ -165,6 +226,8 @@ fun GlassSwitch(
         label = "thumb"
     )
     val trackAlpha by animateFloatAsState(if (checked) 1f else 0f, tween(300), label = "track")
+    val trackStart by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(1800, easing = FastOutSlowInEasing), label = "switchStart")
+    val trackEnd by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(1800, easing = FastOutSlowInEasing), label = "switchEnd")
 
     Box(
         modifier = modifier
@@ -174,7 +237,7 @@ fun GlassSwitch(
             .background(Color.White.copy(alpha = 0.10f))
             .drawBehind {
                 drawRect(
-                    Brush.horizontalGradient(listOf(Pal.Green, Pal.Mint)),
+                    Brush.horizontalGradient(listOf(trackStart, trackEnd)),
                     alpha = trackAlpha
                 )
             }
@@ -196,13 +259,14 @@ fun GlassSwitch(
     }
 }
 
-/** Seletor com a "pílula" verde deslizando entre as opções. */
+/** Seletor com a "pílula" deslizando entre as opções. */
 @Suppress("unused", "UnusedBoxWithConstraintsScope")
 @Composable
 fun GlassSegmented(
     selected: Int,
     labels: List<String>,
     modifier: Modifier = Modifier,
+    active: Boolean = true,
     onSelect: (Int) -> Unit,
 ) {
     val pos by animateFloatAsState(
@@ -210,6 +274,8 @@ fun GlassSegmented(
         spring(dampingRatio = 0.75f, stiffness = 300f),
         label = "seg"
     )
+    val segStart by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(1800, easing = FastOutSlowInEasing), label = "segStart")
+    val segEnd by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(1800, easing = FastOutSlowInEasing), label = "segEnd")
     val outer = RoundedCornerShape(20.dp)
 
     BoxWithConstraints(
@@ -230,7 +296,7 @@ fun GlassSegmented(
                 .clip(RoundedCornerShape(16.dp))
                 .background(
                     Brush.linearGradient(
-                        listOf(Pal.Green.copy(alpha = 0.95f), Pal.Mint.copy(alpha = 0.80f))
+                        listOf(segStart.copy(alpha = 0.95f), segEnd.copy(alpha = 0.80f))
                     )
                 )
         )
@@ -259,11 +325,19 @@ fun GlassSegmented(
 }
 
 @Composable
-fun PillButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun PillButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    active: Boolean = true,
+    onClick: () -> Unit
+) {
+    val colStart by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(1800, easing = FastOutSlowInEasing), label = "btnStart")
+    val colEnd by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(1800, easing = FastOutSlowInEasing), label = "btnEnd")
+
     Box(
         modifier = modifier
             .clip(CircleShape)
-            .background(Brush.horizontalGradient(listOf(Pal.Green, Pal.Mint)))
+            .background(Brush.horizontalGradient(listOf(colStart, colEnd)))
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 9.dp),
         contentAlignment = Alignment.Center
@@ -272,28 +346,48 @@ fun PillButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit)
     }
 }
 
-/** Escudo central: pulsa e brilha quando a proteção está ativa. */
+/** Escudo central: pulsa verde quando a proteção está ativa e exibe efeito de luz vermelha diminuindo quando desativada. */
 @Composable
 fun ShieldOrb(active: Boolean, modifier: Modifier = Modifier) {
-    val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(
+    val transition = rememberInfiniteTransition(label = "pulse")
+    val pulseActive by transition.animateFloat(
         0.88f, 1.12f,
         infiniteRepeatable(tween(2400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "p"
+        label = "pActive"
     )
-    val glow by animateFloatAsState(if (active) 1f else 0.12f, tween(800), label = "glow")
+    val redLightDecreasing by transition.animateFloat(
+        1.0f, 0.40f,
+        infiniteRepeatable(tween(3200, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "redLightDecreasing"
+    )
+
+    val glowTarget = if (active) 1f else 0.80f
+    val glow by animateFloatAsState(glowTarget, tween(1800, easing = FastOutSlowInEasing), label = "glow")
+
+    val primaryColor by animateColorAsState(if (active) Pal.Green else Pal.Red, tween(1800, easing = FastOutSlowInEasing), label = "shieldPrimary")
+    val secondaryColor by animateColorAsState(if (active) Pal.Mint else Pal.Rose, tween(1800, easing = FastOutSlowInEasing), label = "shieldSecondary")
+
+    val activeProgress by animateFloatAsState(
+        targetValue = if (active) 1f else 0f,
+        animationSpec = tween(1800, easing = FastOutSlowInEasing),
+        label = "shieldIconProgress"
+    )
 
     Canvas(modifier.size(150.dp)) {
         val w = size.width
         val h = size.height
         val r = size.minDimension / 2f
 
+        val pulseScale = if (active) pulseActive else (0.88f + (0.12f * redLightDecreasing))
+        val alphaMult = if (active) glow else (glow * redLightDecreasing)
+
         drawCircle(
             brush = Brush.radialGradient(
-                listOf(Pal.Green.copy(alpha = 0.55f * glow), Color.Transparent),
+                listOf(primaryColor.copy(alpha = 0.55f * alphaMult), Color.Transparent),
                 center = center,
-                radius = r * pulse
+                radius = r * pulseScale
             ),
-            radius = r * pulse,
+            radius = r * pulseScale,
             center = center
         )
 
@@ -311,8 +405,8 @@ fun ShieldOrb(active: Boolean, modifier: Modifier = Modifier) {
             shield,
             brush = Brush.verticalGradient(
                 listOf(
-                    Pal.Mint.copy(alpha = 0.20f + (0.55f * glow)),
-                    Pal.Green.copy(alpha = 0.10f + (0.40f * glow)),
+                    secondaryColor.copy(alpha = 0.20f + (0.55f * alphaMult)),
+                    primaryColor.copy(alpha = 0.10f + (0.40f * alphaMult)),
                 ),
                 startY = h * 0.20f,
                 endY = h * 0.85f,
@@ -322,28 +416,400 @@ fun ShieldOrb(active: Boolean, modifier: Modifier = Modifier) {
             shield,
             brush = Brush.linearGradient(
                 listOf(
-                    Color.White.copy(alpha = 0.35f + (0.5f * glow)),
-                    Pal.Green.copy(alpha = 0.25f + (0.65f * glow)),
+                    Color.White.copy(alpha = 0.35f + (0.5f * alphaMult)),
+                    primaryColor.copy(alpha = 0.25f + (0.65f * alphaMult)),
                 ),
             ),
             style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
 
-        val ink = Color.White.copy(alpha = 0.55f + (0.45f * glow))
-        if (active) {
-            val check = Path().apply {
+        val baseInk = Color.White.copy(alpha = 0.55f + (0.45f * alphaMult))
+        val checkAlpha = activeProgress
+        val xAlpha = 1f - activeProgress
+
+        // Desenha o check (✓) quando a proteção estiver ativa
+        if (checkAlpha > 0.01f) {
+            val checkPath = Path().apply {
                 moveTo(w * 0.40f, h * 0.52f)
                 lineTo(w * 0.47f, h * 0.60f)
                 lineTo(w * 0.61f, h * 0.43f)
             }
             drawPath(
-                check,
-                color = ink,
+                checkPath,
+                color = baseInk.copy(alpha = baseInk.alpha * checkAlpha),
                 style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
-        } else {
-            drawLine(ink, Offset(w * 0.44f, h * 0.44f), Offset(w * 0.44f, h * 0.62f), 5.dp.toPx(), StrokeCap.Round)
-            drawLine(ink, Offset(w * 0.56f, h * 0.44f), Offset(w * 0.56f, h * 0.62f), 5.dp.toPx(), StrokeCap.Round)
+        }
+
+        // Desenha o X (❌) quando a proteção estiver desativada
+        if (xAlpha > 0.01f) {
+            val xColor = baseInk.copy(alpha = baseInk.alpha * xAlpha)
+            val strokeW = 5.dp.toPx()
+            drawLine(
+                color = xColor,
+                start = Offset(w * 0.42f, h * 0.44f),
+                end = Offset(w * 0.58f, h * 0.60f),
+                strokeWidth = strokeW,
+                cap = StrokeCap.Round
+            )
+            drawLine(
+                color = xColor,
+                start = Offset(w * 0.58f, h * 0.44f),
+                end = Offset(w * 0.42f, h * 0.60f),
+                strokeWidth = strokeW,
+                cap = StrokeCap.Round
+            )
+        }
+    }
+}
+
+/** Botão das configurações: ícone de engrenagem num recipiente de vidro fosco (frosty blur). */
+@Composable
+fun GlassSettingsButton(
+    modifier: Modifier = Modifier,
+    active: Boolean = true,
+    onClick: () -> Unit,
+) {
+    val accentColor by animateColorAsState(
+        if (active) Pal.Green else Pal.Red,
+        tween(1800, easing = FastOutSlowInEasing),
+        label = "settingsBtnAccent"
+    )
+
+    Box(
+        modifier = modifier
+            .size(46.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.10f))
+            .border(
+                1.dp,
+                Brush.linearGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.45f),
+                        accentColor.copy(alpha = 0.35f)
+                    )
+                ),
+                CircleShape
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(Modifier.size(22.dp)) {
+            val w = size.width
+            val h = size.height
+            val cx = w / 2f
+            val cy = h / 2f
+            val r = w * 0.38f
+
+            drawCircle(
+                color = Color.White.copy(alpha = 0.95f),
+                radius = r * 0.70f,
+                center = Offset(cx, cy),
+                style = Stroke(width = 2.2.dp.toPx(), cap = StrokeCap.Round)
+            )
+            drawCircle(
+                color = Color.Black.copy(alpha = 0.5f),
+                radius = r * 0.28f,
+                center = Offset(cx, cy)
+            )
+            val teeth = 8
+            for (i in 0 until teeth) {
+                val angle = Math.toRadians((i * (360.0 / teeth)))
+                val x1 = cx + (r * 0.65f) * kotlin.math.cos(angle).toFloat()
+                val y1 = cy + (r * 0.65f) * kotlin.math.sin(angle).toFloat()
+                val x2 = cx + r * 1.05f * kotlin.math.cos(angle).toFloat()
+                val y2 = cy + r * 1.05f * kotlin.math.sin(angle).toFloat()
+                drawLine(
+                    color = Color.White.copy(alpha = 0.95f),
+                    start = Offset(x1, y1),
+                    end = Offset(x2, y2),
+                    strokeWidth = 2.8.dp.toPx(),
+                    cap = StrokeCap.Round
+                )
+            }
+        }
+    }
+}
+
+/** Botão de salvar alterações com ícone de check num recipiente de vidro fosco. */
+@Composable
+fun GlassSaveButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    active: Boolean = true,
+    onClick: () -> Unit
+) {
+    val colStart by animateColorAsState(
+        if (active) Pal.Green else Pal.Red,
+        tween(1800, easing = FastOutSlowInEasing),
+        label = "saveBtnStart"
+    )
+    val colEnd by animateColorAsState(
+        if (active) Pal.Mint else Pal.Rose,
+        tween(1800, easing = FastOutSlowInEasing),
+        label = "saveBtnEnd"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clip(CircleShape)
+            .background(Brush.horizontalGradient(listOf(colStart, colEnd)))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Canvas(Modifier.size(20.dp)) {
+                val w = size.width
+                val h = size.height
+                val strokeW = 2.2.dp.toPx()
+                val check = Path().apply {
+                    moveTo(w * 0.22f, h * 0.52f)
+                    lineTo(w * 0.42f, h * 0.72f)
+                    lineTo(w * 0.78f, h * 0.30f)
+                }
+                drawPath(
+                    check,
+                    color = Pal.Black,
+                    style = Stroke(width = strokeW, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text,
+                color = Pal.Black,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp
+            )
+        }
+    }
+}
+
+/** Painel lateral de configurações: desliza da direita para a esquerda em vidro fosco (frosty blur). */
+@Suppress("UnusedBoxWithConstraintsScope")
+@Composable
+fun SettingsDrawer(
+    isOpen: Boolean,
+    active: Boolean,
+    currentLanguageCode: String,
+    onSaveLanguage: (String) -> Unit,
+    onClose: () -> Unit,
+) {
+    val backdropAlpha by animateFloatAsState(
+        targetValue = if (isOpen) 0.60f else 0f,
+        animationSpec = tween(600, easing = FastOutSlowInEasing),
+        label = "drawerBackdrop"
+    )
+
+    val drawerOffsetFraction by animateFloatAsState(
+        targetValue = if (isOpen) 0f else 1.0f,
+        animationSpec = tween(600, easing = FastOutSlowInEasing),
+        label = "drawerSlide"
+    )
+
+    if (isOpen || backdropAlpha > 0.01f) {
+        var tempSelectedLang by remember(isOpen) { mutableStateOf(currentLanguageCode) }
+        val strings = remember(tempSelectedLang) { L10n.strings(tempSelectedLang) }
+        val accentColor by animateColorAsState(
+            if (active) Pal.Green else Pal.Red,
+            tween(1800, easing = FastOutSlowInEasing),
+            label = "drawerAccent"
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = backdropAlpha))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClose
+                )
+        ) {
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                val drawerWidth = maxWidth * 0.88f
+                val panelShape = RoundedCornerShape(topStart = 32.dp, bottomStart = 32.dp)
+
+                Column(
+                    modifier = Modifier
+                        .width(drawerWidth)
+                        .fillMaxHeight()
+                        .graphicsLayer {
+                            translationX = drawerWidth.toPx() * drawerOffsetFraction
+                        }
+                        .clip(panelShape)
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    Color(0xFF121B17).copy(alpha = 0.95f),
+                                    Color(0xFF090D0B).copy(alpha = 0.98f),
+                                )
+                            )
+                        )
+                        .border(
+                            1.dp,
+                            Brush.linearGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.40f),
+                                    Color.White.copy(alpha = 0.08f),
+                                    accentColor.copy(alpha = 0.35f)
+                                )
+                            ),
+                            panelShape
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { /* Previne clique no fundo */ }
+                        .systemBarsPadding()
+                        .padding(top = 16.dp, bottom = 16.dp, start = 20.dp, end = 20.dp)
+                ) {
+                    // Cabeçalho
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                strings.settingsTitle,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Pal.Text
+                            )
+                            Text(
+                                strings.settingsSubtitle,
+                                fontSize = 13.sp,
+                                color = Pal.TextDim
+                            )
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        // Botão fechar
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.10f))
+                                .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = onClose
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Canvas(Modifier.size(16.dp)) {
+                                val w = size.width
+                                val h = size.height
+                                val strokeW = 2.2.dp.toPx()
+                                drawLine(Color.White, Offset(0f, 0f), Offset(w, h), strokeW, StrokeCap.Round)
+                                drawLine(Color.White, Offset(w, 0f), Offset(0f, h), strokeW, StrokeCap.Round)
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // Seção de idioma
+                    Text(
+                        strings.languageSectionTitle,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Pal.Text
+                    )
+                    Text(
+                        strings.languageSectionSubtitle,
+                        fontSize = 13.sp,
+                        color = Pal.TextDim
+                    )
+
+                    Spacer(Modifier.height(14.dp))
+
+                    // Lista de idiomas menor e mais elegante (sem descrições)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AppLanguage.entries.forEach { lang ->
+                            val isSelected = (lang.code == tempSelectedLang)
+                            val itemBorderColor by animateColorAsState(
+                                if (isSelected) accentColor else Color.White.copy(alpha = 0.12f),
+                                tween(400),
+                                label = "langBorder"
+                            )
+                            val itemBgAlpha by animateFloatAsState(
+                                if (isSelected) 0.16f else 0.06f,
+                                tween(400),
+                                label = "langBg"
+                            )
+
+                            val itemShape = RoundedCornerShape(14.dp)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(itemShape)
+                                    .background(Color.White.copy(alpha = itemBgAlpha))
+                                    .border(1.dp, itemBorderColor, itemShape)
+                                    .clickable { tempSelectedLang = lang.code }
+                                    .padding(horizontal = 14.dp, vertical = 9.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(lang.flag, fontSize = 18.sp)
+                                Spacer(Modifier.width(12.dp))
+                                Text(
+                                    lang.nativeName,
+                                    fontSize = 14.sp,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = Pal.Text,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (isSelected) {
+                                    Spacer(Modifier.width(8.dp))
+                                    Canvas(Modifier.size(18.dp)) {
+                                        drawCircle(accentColor)
+                                        val check = Path().apply {
+                                            moveTo(size.width * 0.28f, size.height * 0.52f)
+                                            lineTo(size.width * 0.44f, size.height * 0.68f)
+                                            lineTo(size.width * 0.74f, size.height * 0.36f)
+                                        }
+                                        drawPath(
+                                            check,
+                                            color = Pal.Black,
+                                            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // Botão Salvar alterações na parte inferior
+                    GlassSaveButton(
+                        text = strings.saveChanges,
+                        active = active,
+                        onClick = {
+                            onSaveLanguage(tempSelectedLang)
+                            onClose()
+                        }
+                    )
+                }
+            }
         }
     }
 }
