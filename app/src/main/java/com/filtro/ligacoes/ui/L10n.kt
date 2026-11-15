@@ -62,6 +62,9 @@ data class AppStrings(
     val logEmpty: String,
     val logRejected: String,
     val logHiddenNumber: String,
+    val menuSettings: String,
+    val menuBlockedCalls: String,
+    val blockedCallsTitle: String,
 )
 
 object L10n {
@@ -105,6 +108,9 @@ object L10n {
             logEmpty = "Nenhuma chamada bloqueada ainda.",
             logRejected = "recusada",
             logHiddenNumber = "Número oculto",
+            menuSettings = "Configurações",
+            menuBlockedCalls = "Ligações bloqueadas",
+            blockedCallsTitle = "Histórico de bloqueios",
         )
 
         AppLanguage.EN_US -> AppStrings(
@@ -146,6 +152,9 @@ object L10n {
             logEmpty = "No blocked calls yet.",
             logRejected = "rejected",
             logHiddenNumber = "Private number",
+            menuSettings = "Settings",
+            menuBlockedCalls = "Blocked calls",
+            blockedCallsTitle = "Blocked call history",
         )
 
         AppLanguage.ZH_CN -> AppStrings(
@@ -187,6 +196,9 @@ object L10n {
             logEmpty = "暂无拦截记录。",
             logRejected = "已拒接",
             logHiddenNumber = "隐藏号码",
+            menuSettings = "设置",
+            menuBlockedCalls = "已拦截来电",
+            blockedCallsTitle = "拦截记录",
         )
 
         AppLanguage.FR_FR -> AppStrings(
@@ -228,6 +240,9 @@ object L10n {
             logEmpty = "Aucun appel bloqué pour le moment.",
             logRejected = "rejeté",
             logHiddenNumber = "Numéro masqué",
+            menuSettings = "Paramètres",
+            menuBlockedCalls = "Appels bloqués",
+            blockedCallsTitle = "Historique des appels bloqués",
         )
 
         AppLanguage.DE_DE -> AppStrings(
@@ -269,6 +284,9 @@ object L10n {
             logEmpty = "Noch keine Anrufe blockiert.",
             logRejected = "abgelehnt",
             logHiddenNumber = "Verborgene Nummer",
+            menuSettings = "Einstellungen",
+            menuBlockedCalls = "Blockierte Anrufe",
+            blockedCallsTitle = "Blockierte Anrufe Verlauf",
         )
 
         AppLanguage.ES_ES -> AppStrings(
@@ -283,7 +301,7 @@ object L10n {
             statusActive = "Protección activa",
             statusDisabled = "Protección desactivada",
             descNeedsSetup = "Complete los pasos a continuación para comenzar.",
-            descActive = "Las llamadas de números fuera de la agenda serán bloqueadas.",
+            descActive = "Las llamadas de números fuera de a agenda serán bloqueadas.",
             descDisabled = "Todas las llamadas sonarán normalmente.",
             switchOn = "Encendido",
             switchOff = "Apagado",
@@ -310,6 +328,9 @@ object L10n {
             logEmpty = "Ninguna llamada bloqueada aún.",
             logRejected = "rechazada",
             logHiddenNumber = "Número oculto",
+            menuSettings = "Configuración",
+            menuBlockedCalls = "Llamadas bloqueadas",
+            blockedCallsTitle = "Historial de llamadas bloqueadas",
         )
 
         AppLanguage.IT_IT -> AppStrings(
@@ -351,6 +372,9 @@ object L10n {
             logEmpty = "Nessuna chiamata bloccata finora.",
             logRejected = "rifiutata",
             logHiddenNumber = "Numero nascosto",
+            menuSettings = "Impostazioni",
+            menuBlockedCalls = "Chiamate bloccate",
+            blockedCallsTitle = "Cronologia chiamate bloccate",
         )
 
         AppLanguage.EN_GB -> AppStrings(
@@ -392,6 +416,9 @@ object L10n {
             logEmpty = "No blocked calls yet.",
             logRejected = "rejected",
             logHiddenNumber = "Withheld number",
+            menuSettings = "Settings",
+            menuBlockedCalls = "Blocked calls",
+            blockedCallsTitle = "Blocked call history",
         )
     }
 }

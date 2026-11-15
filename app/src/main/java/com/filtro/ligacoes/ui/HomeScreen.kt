@@ -54,7 +54,6 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.filtro.ligacoes.BlockedCall
 import com.filtro.ligacoes.Health
 import com.filtro.ligacoes.Prefs
-import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
@@ -103,6 +102,8 @@ private fun HomeScreen(
     var blockHidden by remember { mutableStateOf(prefs.blockHidden) }
     var languageCode by remember { mutableStateOf(prefs.languageCode) }
     var isSettingsOpen by remember { mutableStateOf(false) }
+    var isMenuOpen by remember { mutableStateOf(false) }
+    var isBlockedCallsOpen by remember { mutableStateOf(false) }
 
     var roleHeld by remember { mutableStateOf(value = false) }
     var contactsOk by remember { mutableStateOf(value = false) }
@@ -162,7 +163,7 @@ private fun HomeScreen(
                 }
             }
 
-            // Cartão principal com o botão de engrenagem sobreposto na primeira caixa de seleção
+            // Cartão principal com o botão de adição (+) sobreposto na primeira caixa de seleção
             Box(modifier = Modifier.entrance(1).fillMaxWidth()) {
                 GlassCard(active = protecting) {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -217,14 +218,14 @@ private fun HomeScreen(
                         }
                     }
                 }
-                // Botão de engrenagem posicionado exatamente sobre a sobreposição da primeira caixa de seleção
+                // Botão de adição (+) posicionado exatamente sobre a sobreposição da primeira caixa de seleção
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(top = 16.dp, end = 16.dp)
                 ) {
-                    GlassSettingsButton(active = protecting) {
-                        isSettingsOpen = true
+                    GlassPlusButton(active = protecting) {
+                        isMenuOpen = true
                     }
                 }
             }
@@ -294,35 +295,19 @@ private fun HomeScreen(
                 }
             }
 
-            // Histórico
-            GlassCard(modifier = Modifier.entrance(4), active = protecting) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) { SectionTitle(str.logTitle) }
-                    if (log.isNotEmpty()) {
-                        PillButton(str.logClearAction, active = protecting) {
-                            prefs.clearLog()
-                            log = emptyList()
-                        }
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                if (log.isEmpty()) {
-                    Text(str.logEmpty, fontSize = 14.sp, color = Pal.TextDim)
-                } else {
-                    val fmt = remember { SimpleDateFormat("dd/MM  HH:mm", Locale.forLanguageTag("pt-BR")) }
-                    log.take(8).forEach { (time, number) ->
-                        LogRow(
-                            number = number.ifBlank { str.logHiddenNumber },
-                            whenText = fmt.format(Date(time)),
-                            rejectedText = str.logRejected,
-                            primaryColor = primaryColor,
-                        )
-                    }
-                }
-            }
-
             Spacer(Modifier.height(24.dp))
         }
+
+        // Submenu flutuante em vidro fosco acionado pelo botão +
+        ActionSubmenu(
+            isOpen = isMenuOpen,
+            active = protecting,
+            settingsLabel = str.menuSettings,
+            blockedCallsLabel = str.menuBlockedCalls,
+            onOpenSettings = { isSettingsOpen = true },
+            onOpenBlockedCalls = { isBlockedCallsOpen = true },
+            onDismiss = { isMenuOpen = false },
+        )
 
         // Aba lateral de configurações
         SettingsDrawer(
@@ -334,6 +319,24 @@ private fun HomeScreen(
                 languageCode = newLang
             },
             onClose = { isSettingsOpen = false },
+        )
+
+        // Gaveta lateral de ligações bloqueadas
+        BlockedCallsDrawer(
+            isOpen = isBlockedCallsOpen,
+            active = protecting,
+            title = str.blockedCallsTitle,
+            clearActionText = str.logClearAction,
+            emptyText = str.logEmpty,
+            rejectedText = str.logRejected,
+            hiddenNumberText = str.logHiddenNumber,
+            log = log,
+            primaryColor = primaryColor,
+            onClearLog = {
+                prefs.clearLog()
+                log = emptyList()
+            },
+            onClose = { isBlockedCallsOpen = false },
         )
     }
 }
@@ -421,26 +424,5 @@ private fun StatusDot(done: Boolean, active: Boolean = true) {
                 style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
         }
-    }
-}
-
-@Composable
-private fun LogRow(number: String, whenText: String, rejectedText: String, primaryColor: Color = Pal.Green) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(number, color = Pal.Text, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-            Text(whenText, color = Pal.TextDim, fontSize = 12.sp)
-        }
-        Text(
-            rejectedText,
-            color = primaryColor,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
     }
 }

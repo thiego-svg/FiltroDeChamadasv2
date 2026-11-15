@@ -1,5 +1,11 @@
 package com.filtro.ligacoes.ui
 
+import androidx.compose.ui.text.style.TextAlign
+import com.filtro.ligacoes.BlockedCall
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -463,9 +469,9 @@ fun ShieldOrb(active: Boolean, modifier: Modifier = Modifier) {
     }
 }
 
-/** Botão das configurações: ícone de engrenagem num recipiente de vidro fosco (frosty blur). */
+/** Botão de adição (+): abre o submenu em vidro fosco. */
 @Composable
-fun GlassSettingsButton(
+fun GlassPlusButton(
     modifier: Modifier = Modifier,
     active: Boolean = true,
     onClick: () -> Unit,
@@ -473,7 +479,7 @@ fun GlassSettingsButton(
     val accentColor by animateColorAsState(
         if (active) Pal.Green else Pal.Red,
         tween(1800, easing = FastOutSlowInEasing),
-        label = "settingsBtnAccent"
+        label = "plusBtnAccent"
     )
 
     Box(
@@ -498,38 +504,342 @@ fun GlassSettingsButton(
             ),
         contentAlignment = Alignment.Center
     ) {
-        Canvas(Modifier.size(22.dp)) {
+        Canvas(Modifier.size(18.dp)) {
             val w = size.width
             val h = size.height
-            val cx = w / 2f
-            val cy = h / 2f
-            val r = w * 0.38f
+            val strokeW = 2.5.dp.toPx()
+            drawLine(Color.White, Offset(w / 2f, 0f), Offset(w / 2f, h), strokeW, StrokeCap.Round)
+            drawLine(Color.White, Offset(0f, h / 2f), Offset(w, h / 2f), strokeW, StrokeCap.Round)
+        }
+    }
+}
 
-            drawCircle(
-                color = Color.White.copy(alpha = 0.95f),
-                radius = r * 0.70f,
-                center = Offset(cx, cy),
-                style = Stroke(width = 2.2.dp.toPx(), cap = StrokeCap.Round)
+@Composable
+fun GearIcon(tint: Color) {
+    Canvas(Modifier.size(20.dp)) {
+        val w = size.width
+        val h = size.height
+        val cx = w / 2f
+        val cy = h / 2f
+        val r = w * 0.38f
+        drawCircle(
+            color = tint,
+            radius = r * 0.70f,
+            center = Offset(cx, cy),
+            style = Stroke(width = 2f.dp.toPx(), cap = StrokeCap.Round)
+        )
+        val teeth = 8
+        for (i in 0 until teeth) {
+            val angle = Math.toRadians((i * (360.0 / teeth)))
+            val x1 = cx + (r * 0.60f) * kotlin.math.cos(angle).toFloat()
+            val y1 = cy + (r * 0.60f) * kotlin.math.sin(angle).toFloat()
+            val x2 = cx + r * 1.05f * kotlin.math.cos(angle).toFloat()
+            val y2 = cy + r * 1.05f * kotlin.math.sin(angle).toFloat()
+            drawLine(
+                color = tint,
+                start = Offset(x1, y1),
+                end = Offset(x2, y2),
+                strokeWidth = 2.5.dp.toPx(),
+                cap = StrokeCap.Round
             )
-            drawCircle(
-                color = Color.Black.copy(alpha = 0.5f),
-                radius = r * 0.28f,
-                center = Offset(cx, cy)
-            )
-            val teeth = 8
-            for (i in 0 until teeth) {
-                val angle = Math.toRadians((i * (360.0 / teeth)))
-                val x1 = cx + (r * 0.65f) * kotlin.math.cos(angle).toFloat()
-                val y1 = cy + (r * 0.65f) * kotlin.math.sin(angle).toFloat()
-                val x2 = cx + r * 1.05f * kotlin.math.cos(angle).toFloat()
-                val y2 = cy + r * 1.05f * kotlin.math.sin(angle).toFloat()
-                drawLine(
-                    color = Color.White.copy(alpha = 0.95f),
-                    start = Offset(x1, y1),
-                    end = Offset(x2, y2),
-                    strokeWidth = 2.8.dp.toPx(),
-                    cap = StrokeCap.Round
+        }
+    }
+}
+
+@Composable
+fun ShieldCallIcon(tint: Color) {
+    Canvas(Modifier.size(20.dp)) {
+        val w = size.width
+        val h = size.height
+        val shield = Path().apply {
+            moveTo(w * 0.50f, h * 0.15f)
+            lineTo(w * 0.85f, h * 0.28f)
+            lineTo(w * 0.85f, h * 0.55f)
+            cubicTo(w * 0.85f, h * 0.75f, w * 0.70f, h * 0.88f, w * 0.50f, h * 0.95f)
+            cubicTo(w * 0.30f, h * 0.88f, w * 0.15f, h * 0.75f, w * 0.15f, h * 0.55f)
+            lineTo(w * 0.15f, h * 0.28f)
+            close()
+        }
+        drawPath(shield, color = tint, style = Stroke(width = 2f.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+    }
+}
+
+@Composable
+fun SubmenuItem(
+    icon: @Composable () -> Unit,
+    text: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        icon()
+        Spacer(Modifier.width(12.dp))
+        Text(text, color = Pal.Text, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+/** Submenu flutuante em vidro fosco acionado pelo botão +. */
+@Composable
+fun ActionSubmenu(
+    isOpen: Boolean,
+    active: Boolean,
+    settingsLabel: String,
+    blockedCallsLabel: String,
+    onOpenSettings: () -> Unit,
+    onOpenBlockedCalls: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (isOpen) {
+        val accentColor by animateColorAsState(
+            if (active) Pal.Green else Pal.Red,
+            tween(1800, easing = FastOutSlowInEasing),
+            label = "submenuAccent"
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.35f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismiss
+                ),
+            contentAlignment = Alignment.TopEnd
+        ) {
+            val menuShape = RoundedCornerShape(20.dp)
+            Column(
+                modifier = Modifier
+                    .padding(top = 70.dp, end = 20.dp)
+                    .width(230.dp)
+                    .clip(menuShape)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                Color(0xFF14201A).copy(alpha = 0.96f),
+                                Color(0xFF090E0C).copy(alpha = 0.98f),
+                            )
+                        )
+                    )
+                    .border(
+                        1.dp,
+                        Brush.linearGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.40f),
+                                Color.White.copy(alpha = 0.08f),
+                                accentColor.copy(alpha = 0.40f)
+                            )
+                        ),
+                        menuShape
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { /* prevent dismiss */ }
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                SubmenuItem(
+                    icon = { GearIcon(accentColor) },
+                    text = settingsLabel,
+                    onClick = {
+                        onDismiss()
+                        onOpenSettings()
+                    }
                 )
+                SubmenuItem(
+                    icon = { ShieldCallIcon(accentColor) },
+                    text = blockedCallsLabel,
+                    onClick = {
+                        onDismiss()
+                        onOpenBlockedCalls()
+                    }
+                )
+            }
+        }
+    }
+}
+
+/** Gaveta lateral em vidro fosco para exibir o histórico de ligações bloqueadas. */
+@Suppress("UnusedBoxWithConstraintsScope")
+@Composable
+fun BlockedCallsDrawer(
+    isOpen: Boolean,
+    active: Boolean,
+    title: String,
+    clearActionText: String,
+    emptyText: String,
+    rejectedText: String,
+    hiddenNumberText: String,
+    log: List<BlockedCall>,
+    primaryColor: Color,
+    onClearLog: () -> Unit,
+    onClose: () -> Unit,
+) {
+    val backdropAlpha by animateFloatAsState(
+        targetValue = if (isOpen) 0.60f else 0f,
+        animationSpec = tween(600, easing = FastOutSlowInEasing),
+        label = "blockedBackdrop"
+    )
+
+    val drawerOffsetFraction by animateFloatAsState(
+        targetValue = if (isOpen) 0f else 1.0f,
+        animationSpec = tween(600, easing = FastOutSlowInEasing),
+        label = "blockedSlide"
+    )
+
+    if (isOpen || backdropAlpha > 0.01f) {
+        val accentColor by animateColorAsState(
+            if (active) Pal.Green else Pal.Red,
+            tween(1800, easing = FastOutSlowInEasing),
+            label = "blockedDrawerAccent"
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = backdropAlpha))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClose
+                )
+        ) {
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                val drawerWidth = maxWidth * 0.88f
+                val panelShape = RoundedCornerShape(topStart = 32.dp, bottomStart = 32.dp)
+
+                Column(
+                    modifier = Modifier
+                        .width(drawerWidth)
+                        .fillMaxHeight()
+                        .graphicsLayer {
+                            translationX = drawerWidth.toPx() * drawerOffsetFraction
+                        }
+                        .clip(panelShape)
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    Color(0xFF121B17).copy(alpha = 0.95f),
+                                    Color(0xFF090D0B).copy(alpha = 0.98f),
+                                )
+                            )
+                        )
+                        .border(
+                            1.dp,
+                            Brush.linearGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.40f),
+                                    Color.White.copy(alpha = 0.08f),
+                                    accentColor.copy(alpha = 0.35f)
+                                )
+                            ),
+                            panelShape
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { /* prevent click-through */ }
+                        .systemBarsPadding()
+                        .padding(top = 16.dp, bottom = 16.dp, start = 20.dp, end = 20.dp)
+                ) {
+                    // Cabeçalho
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            title,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Pal.Text,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (log.isNotEmpty()) {
+                            PillButton(clearActionText, active = active, onClick = onClearLog)
+                            Spacer(Modifier.width(8.dp))
+                        }
+                        // Botão fechar
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.10f))
+                                .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = onClose
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Canvas(Modifier.size(16.dp)) {
+                                val w = size.width
+                                val h = size.height
+                                val strokeW = 2.2.dp.toPx()
+                                drawLine(Color.White, Offset(0f, 0f), Offset(w, h), strokeW, StrokeCap.Round)
+                                drawLine(Color.White, Offset(w, 0f), Offset(0f, h), strokeW, StrokeCap.Round)
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(18.dp))
+
+                    // Lista de bloqueadas
+                    if (log.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(emptyText, fontSize = 14.sp, color = Pal.TextDim, textAlign = TextAlign.Center)
+                        }
+                    } else {
+                        val fmt = remember { SimpleDateFormat("dd/MM  HH:mm", Locale.forLanguageTag("pt-BR")) }
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            log.forEach { (time, number) ->
+                                val itemShape = RoundedCornerShape(16.dp)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(itemShape)
+                                        .background(Color.White.copy(alpha = 0.06f))
+                                        .border(1.dp, Color.White.copy(alpha = 0.10f), itemShape)
+                                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text(number.ifBlank { hiddenNumberText }, color = Pal.Text, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                        Text(fmt.format(Date(time)), color = Pal.TextDim, fontSize = 12.sp)
+                                    }
+                                    Text(
+                                        rejectedText,
+                                        color = primaryColor,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
