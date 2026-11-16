@@ -18,21 +18,7 @@ Aplicativo moderno em Kotlin e Jetpack Compose para Android 10+ (API 29+) que re
   - 🇪🇸 Espanhol (`es-ES`)
   - 🇮🇹 Italiano (`it-IT`)
   - 🇬🇧 Inglês (Reino Unido) (`en-GB`)
-- ⏱️ **Transições Ultra-Fluidas**: Animações suaves de 1.8 segundos com atenuação natural (*FastOutSlowInEasing*).
-
----
-
-## Como gerar o APK
-
-### Opção 1 – GitHub Actions (Recomendado)
-1. Crie um repositório no GitHub e envie este projeto inteiro.
-2. Acesse a aba **Actions** no GitHub para compilar automaticamente o APK.
-
-### Opção 2 – Android Studio
-1. Abra o Android Studio e escolha **File > Open** selecionando a pasta do projeto.
-2. Aguarde o *Gradle Sync*.
-3. Vá em **Build > Build Bundle(s) / APK(s) > Build APK(s)**.
-4. O arquivo gerado estará em `app/build/outputs/apk/debug/app-debug.apk`.
+- ⏱️ **Transições Rápidas**: Animações de 350 ms com atenuação natural (*FastOutSlowInEasing*).
 
 ---
 
